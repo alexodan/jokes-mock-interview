@@ -7,9 +7,11 @@
   "dependencies": {
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "14.0.0",
+    "jest-fetch-mock": "^3.0.3",
     "loader-utils": "3.2.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-query": "^3.39.3",
     "react-scripts": "5.0.1",
     "use-deep-compare-effect": "1.8.1"
   },
@@ -28,5 +30,8 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "jest": {
+    "resetMocks": false
+  }
 }

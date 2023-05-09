@@ -1,33 +1,11 @@
 import React from "react";
 import useDeepCompareEffect from "use-deep-compare-effect";
+// import { useQuery } from 'react-query';
 
-/**
- * API Specs
- * https://v2.jokeapi.dev/
- * Example: https://v2.jokeapi.dev/joke/Programming?blacklistFlags=nsfw
- *
- * Challenge:
- * Part 1:
- * - Go through the current API and fetch
- * - Implement loading and error states
- * - Implement simplified useQuery from scratch
- *
- * Part 2.1:
- * Create a search input to find a joke by a certain word.
- *
- * Part 2.2
- * Search for the joke on change with debounce.
- *
- * Part 3.
- * Let's test this!
- */
-
-function useMyQuery(keys, callback, options) {
+function useMyQuery(keys, callback, { enabled }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [data, setData] = React.useState(undefined);
-
-  const { enabled } = options;
 
   const refetch = React.useCallback(async () => {
     try {
@@ -35,11 +13,12 @@ function useMyQuery(keys, callback, options) {
       const response = await callback();
       setData(response);
     } catch (e) {
+      console.error("An error occurred:", e);
       setError(e);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [keys[1]]); // Note: this ain't right
 
   useDeepCompareEffect(() => {
     if (enabled) {
@@ -51,26 +30,27 @@ function useMyQuery(keys, callback, options) {
     isLoading,
     error,
     data,
-    refetch
+    refetch,
   };
 }
 
-async function fetchProgrammingJoke(queryParams) {
-  const endpoint = queryParams
-    ? `https://v2.jokeapi.dev/joke/Programming?contains=${queryParams}`
+async function fetchProgrammingJoke(input) {
+  const endpoint = input
+    ? `https://v2.jokeapi.dev/joke/Programming?contains=${input}`
     : "https://v2.jokeapi.dev/joke/Programming";
-  const response = await fetch(endpoint).then((r) => r.json());
+  const response = await fetch(endpoint);
+  const data = await response.json();
 
-  if (response.error) {
-    const errorMessage = `${response.message}. ${response.causedBy.join(".")}`;
+  if (data.error) {
+    const errorMessage = `${data.message}. ${data.causedBy.join(".")}`;
     return errorMessage;
   }
 
-  if (response.type === "single") {
-    return response.joke;
+  if (data.type === "single") {
+    return data.joke;
   }
-  if (response.type === "twopart") {
-    return `${response.setup} ... ${response.delivery}`;
+  if (data.type === "twopart") {
+    return `${data.setup} ... ${data.delivery}`;
   }
 
   return response;
@@ -78,6 +58,7 @@ async function fetchProgrammingJoke(queryParams) {
 
 export function Exercise1() {
   const [input, setInput] = React.useState("");
+
   const { isLoading, error, data, refetch } = useMyQuery(
     ["jokes", input],
     () => fetchProgrammingJoke(input),
@@ -88,14 +69,11 @@ export function Exercise1() {
 
   return (
     <div>
-      {/* <label htmlFor="joke"></label> */}
-      <input
-        data-testid="joke-input"
-        id="joke"
-        type="text"
-        value={input}
-        onChange={handleChange}
-      />
+      {/* Note: Label added for accessibility with visibility hidden */}
+      <label htmlFor="joke" style={{ visibility: "hidden" }}>
+        Search joke
+      </label>
+      <input id="joke" type="text" value={input} onChange={handleChange} />
       <br />
       <br />
       <button onClick={refetch}>Get joke</button>
@@ -104,9 +82,9 @@ export function Exercise1() {
       {isLoading ? (
         <div>Loading...</div>
       ) : error ? (
-        <div>{error}</div>
+        <div>{JSON.stringify(error)}</div>
       ) : (
-        <div>{data}</div>
+        <div data-testid="joke-result">{JSON.stringify(data)}</div>
       )}
     </div>
   );
